@@ -4,6 +4,7 @@ import path from 'path'
 import axios from 'axios'
 import { pipeline } from 'stream'
 import { promisify } from 'util'
+import fetch from "node-fetch"
 
 const streamPipeline = promisify(pipeline)
 
@@ -22,47 +23,29 @@ const handler = async (m, { conn, command, text, usedPrefix }) => {
   }, { quoted: m })
 
   try {
-    const response = await axios.get(`${APIs.ryzen}/api/downloader/ytmp3?url=${encodeURIComponent(url)}`)
-    const data = response.data
-
-    if (!data.url) throw new Error('Audio URL not found')
-
-    const safeTitle = data.title.replace(/[\\/:*?"<>|]/g, '').slice(0, 50)
-    const tmpDir = path.join(process.cwd(), 'tmp')
-
-    if (!fs.existsSync(tmpDir)) {
-      fs.mkdirSync(tmpDir, { recursive: true })
-    }
-
-    const filePath = path.join(tmpDir, `${safeTitle}.mp3`)
-
-    const audioResponse = await axios({
-      method: 'get',
-      url: data.url,
-      responseType: 'stream',
-    })
-
-    await streamPipeline(audioResponse.data, fs.createWriteStream(filePath))
+let ouh = await fetch(`https://fastrestapis.fasturl.cloud/downup/ytdown-v1?name=${title}&format=mp3&quality=128&server=auto`)
+  let gyh = await ouh.json()
+//    const data = fetch(`https://fastrestapis.fasturl.cloud/downup/ytdown-v1?name=${title}&format=mp3&quality=128&server=auto`)
+//    const result = await data.json();
 
     await conn.sendMessage(m.chat, {
-      audio: { url: filePath },
+      audio: { url: gyh.result.media },
       mimetype: 'audio/mpeg',
-      fileName: `${safeTitle}.mp3`,
-      caption: `*${data.title}*\n*Duración*: ${data.lengthSeconds} segundos\n*Vistas*: ${data.views}\n*Publicado*: ${data.uploadDate}`,
+      fileName: `${title}.mp3`,
+      caption: `*${gyh.result.title}*\n*Duración*: ${gyh.result.duration}`,
       contextInfo: {
         externalAdReply: {
           showAdAttribution: true,
           mediaType: 2,
-          mediaUrl: data.videoUrl,
-          title: data.title,
+          mediaUrl: url,
+          title: gyh.result.title,
           body: 'Audio Download',
-          sourceUrl: data.videoUrl,
-          thumbnail: await (await conn.getFile(data.thumbnail)).data,
+          sourceUrl: url,
+          thumbnail: await (await conn.getFile(thumbnail)).data,
         },
       },
     }, { quoted: m })
 
-    fs.unlink(filePath, () => { })
 
   } catch (error) {
     console.error('Error:', error.message)
@@ -74,8 +57,7 @@ handler.help = ['play'].map(v => v + ' <consulta>')
 handler.tags = ['downloader']
 handler.command = /^(play)$/i
 
-handler.limit = 8
-handler.register = true
+handler.register = false
 handler.disable = false
 
 export default handler
