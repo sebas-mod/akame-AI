@@ -1,0 +1,19 @@
+import axios from 'axios'
+
+let handler = async (m, { conn, args }) => {
+  if (!args[0]) throw 'Please provide a Twitter URL';
+  const sender = m.sender.split('@')[0];
+  const url = args[0];
+
+  m.reply(wait);
+
+};
+
+handler.help = ['twitter <url>'];
+handler.tags = ['downloader'];
+handler.command = /^(x|twt|twitter(dl)?)$/i;
+
+handler.limit = true
+handler.register = true
+
+export default handler
